@@ -5,10 +5,10 @@ To run
 
 ```
 # build
-go build main.go
+go build -o copy main.go
 
 # run
-./main -src="test/data/source" -dst="test/data/target"
+./copy -src="test/data/source" -dst="test/data/target"
 ```
 
 To run tests 
