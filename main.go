@@ -350,7 +350,7 @@ func CopyDirSafely(src string, dst string, nBufferBytes uint, p chan Progress) {
 	}
 }
 
-// ./main -src="D:\Keep\Books" -dst="E:\Keep\Books"
+// ./main -src="C:\Books" -dst="D:\Books"
 func main() {
 
 	src := *flag.String("src", "test/data/source", "Source directory to copy")
