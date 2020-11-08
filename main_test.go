@@ -44,28 +44,6 @@ func TestWalkFilesRecursively(t *testing.T) {
 			t.Errorf("File was wrong, want: %v, got: %v", expectedPath, actualPath)
 		}
 	}
-
-	var path string
-	c2 := make(chan FileResult)
-	go WalkFilesRecursively("D:/torrents/Prey", c2, 10)
-	for file := range c2 {
-		if MemUsage() > 240000 {
-			t.Errorf("Mem too high!: %v", bToMb(MemUsage()))
-		}
-		files = append(files, file.Path)
-	}
-	path = "D:/torrents/Prey/cpy-prey.iso"
-	if path != files[4] {
-		t.Errorf("File was wrong, want: %v, got: %v.", path, files[4])
-	}
-	path = "D:/torrents/Prey/cpy-prey.nfo"
-	if path != files[5] {
-		t.Errorf("File was wrong, want: %v, got: %v.", path, files[5])
-	}
-	path = "D:/torrents/Prey/README.txt"
-	if path != files[6] {
-		t.Errorf("File was wrong, want: %v, got: %v.", path, files[6])
-	}
 }
 
 func TestCopyFileSafelyOwerwrite(t *testing.T) {

@@ -365,34 +365,4 @@ func main() {
 			fmt.Printf("%v sec %v\n", progress.Path, progress.TimeLeft)
 		}
 	}
-
-	// path := "D:/torrents/Prey/cpy-prey.iso"
-
-	// sum, _ := Checksum(path)
-	// fmt.Printf("Checksum %v\n", sum)
-
-	// fileStat, err := os.Stat(path)
-	// if err != nil {
-	// 	log.Fatalf("Failed: %v", err)
-	// 	return
-	// }
-
-	// p1 := make(chan Progress)
-	// go CopyFileSafely(FileResult{"test/data/source/file1.txt", nil, fileStat}, "D:\\TEMP\\Prey\\file1.txt", 64*1024*1024, p1)
-	// for progress := range p1 {
-	// 	if progress.Error != nil {
-	// 		log.Fatalf("Failed: %v", progress.Error)
-	// 	}
-	// 	fmt.Printf("%v %v/%v seconds left %v\n", path, progress.Current, progress.Total, progress.TimeLeft/float64(time.Second))
-	// }
-
-	// p := make(chan Progress)
-	// go CopyFileSafely(FileResult{path, nil, fileStat}, "D:\\TEMP\\Prey\\prey.iso", 64*1024*1024, p)
-
-	// for progress := range p {
-	// 	if progress.Error != nil {
-	// 		log.Fatalf("Failed: %v", progress.Error)
-	// 	}
-	// 	fmt.Printf("%v %v/%v seconds left %v\n", path, progress.Current, progress.Total, progress.TimeLeft/float64(time.Second))
-	// }
 }
