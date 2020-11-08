@@ -7,7 +7,7 @@ import (
 )
 
 func TestChecksum(t *testing.T) {
-	checksum, _ := Checksum("test/data/deepfoldertest/file1.txt")
+	checksum, _ := Checksum("test/data/source/file1.txt")
 	if "c4ca4238a0b923820dcc509a6f75849b" != checksum {
 		t.Errorf("Checksum was wrong, got: %s, expected: %s", checksum, "")
 	}
@@ -18,7 +18,7 @@ func TestWalkFilesRecursively(t *testing.T) {
 	var files []string
 
 	c := make(chan FileResult)
-	go WalkFilesRecursively("test/data/deepfoldertest", c, 10)
+	go WalkFilesRecursively("test/data/source", c, 10)
 	for file := range c {
 		if MemUsage() > 240000 {
 			t.Errorf("Mem too high!: %v", bToMb(MemUsage()))
@@ -31,10 +31,10 @@ func TestWalkFilesRecursively(t *testing.T) {
 	}
 
 	expected := []string{
-		"/deepfoldertest/file1.txt",
-		"/deepfoldertest/subfolder/file2.txt",
-		"/deepfoldertest/subfolder/subfolder/file3.txt",
-		"/deepfoldertest/subfolder/subfolder/file4.txt",
+		"/source/file1.txt",
+		"/source/subfolder/file2.txt",
+		"/source/subfolder/subfolder/file3.txt",
+		"/source/subfolder/subfolder/file4.txt",
 	}
 
 	for k, expectedPath := range expected {
@@ -70,7 +70,7 @@ func TestWalkFilesRecursively(t *testing.T) {
 
 func TestCopyFileSafelyOwerwrite(t *testing.T) {
 	var p = make(chan Progress)
-	go CopyFileSafely(FileResult{"test/data/deepfoldertest/subfolder/file2.txt", nil, nil}, "test/data/deepfoldertarget/subfolder/file2.txt", 1024*1024, p)
+	go CopyFileSafely(FileResult{"test/data/source/subfolder/file2.txt", nil, nil}, "test/data/target/subfolder/file2.txt", 1024*1024, p)
 	errors := []error{}
 	files := []string{}
 	for progress := range p {
@@ -89,7 +89,7 @@ func TestCopyFileSafelyOwerwrite(t *testing.T) {
 
 func TestCopyFileSafelyNoOwerwrite(t *testing.T) {
 	var p = make(chan Progress)
-	go CopyFileSafely(FileResult{"test/data/deepfoldertest/file1.txt", nil, nil}, "test/data/deepfoldertarget/file1.txt", 1024*1024, p)
+	go CopyFileSafely(FileResult{"test/data/source/file1.txt", nil, nil}, "test/data/target/file1.txt", 1024*1024, p)
 	errors := []error{}
 	files := []string{}
 	for progress := range p {

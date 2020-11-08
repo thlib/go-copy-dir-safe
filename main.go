@@ -353,8 +353,8 @@ func CopyDirSafely(src string, dst string, nBufferBytes uint, p chan Progress) {
 // ./main -src="D:\Keep\Books" -dst="E:\Keep\Books"
 func main() {
 
-	src := *flag.String("src", "test/data/deepfoldertest", "Source directory to copy")
-	dst := *flag.String("dst", "test/data/deepfoldertarget", "Destination directory to copy to")
+	src := *flag.String("src", "test/data/source", "Source directory to copy")
+	dst := *flag.String("dst", "test/data/target", "Destination directory to copy to")
 
 	p := make(chan Progress)
 	go CopyDirSafely(src, dst, 64*1024*1024, p)
@@ -378,7 +378,7 @@ func main() {
 	// }
 
 	// p1 := make(chan Progress)
-	// go CopyFileSafely(FileResult{"test/data/deepfoldertest/file1.txt", nil, fileStat}, "D:\\TEMP\\Prey\\file1.txt", 64*1024*1024, p1)
+	// go CopyFileSafely(FileResult{"test/data/source/file1.txt", nil, fileStat}, "D:\\TEMP\\Prey\\file1.txt", 64*1024*1024, p1)
 	// for progress := range p1 {
 	// 	if progress.Error != nil {
 	// 		log.Fatalf("Failed: %v", progress.Error)
