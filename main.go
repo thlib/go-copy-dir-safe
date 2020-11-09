@@ -78,7 +78,16 @@ func Checkcopy(src, dst string) error {
 
 // WalkFilesRecursively goes over all files recursively and returns the name into the channel
 func WalkFilesRecursively(root string, c chan FileResult, n int) {
-	root, _ = filepath.Abs(root) // TODO: handle error
+	root, err := filepath.Abs(root)
+	if err != nil {
+		c <- FileResult{
+			Path:  root,
+			Error: fmt.Errorf("Failed getting absulute path of %v: %w", root, err),
+			Info:  nil,
+		}
+		return
+	}
+
 	file, err := os.Open(root)
 	if err != nil {
 		close(c)
@@ -174,7 +183,17 @@ func stats(info os.FileInfo, path string, p chan Progress) os.FileInfo {
 
 // CopyFileSafely from source src to destination dst
 func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progress) {
-	dst, _ = Abs(dst) // TODO: handle error
+	dst, err := Abs(dst)
+	if err != nil {
+		p <- Progress{
+			Path:     dst,
+			Total:    0,
+			Current:  0,
+			Error:    fmt.Errorf("Can't get absolute path of %v: %w", dst, err),
+			TimeLeft: 0,
+		}
+		return
+	}
 
 	startTime := time.Now().UnixNano()
 
@@ -211,7 +230,7 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 		return
 	}
 
-	// Error if the size of the target is larger than that of the source
+	// If the file exists
 	info, err := os.Stat(dst)
 	if !os.IsNotExist(err) {
 		if err != nil {
@@ -224,6 +243,21 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 			}
 			return
 		}
+
+		// Skip if the size of the target is the same as that of the source (assume it already exists and is correct)
+		// TODO: Should we do a checksum check?
+		if src.Info.Size() == info.Size() {
+			p <- Progress{
+				Path:     dst,
+				Total:    TotalSize,
+				Current:  TotalSize,
+				Error:    nil,
+				TimeLeft: 0,
+			}
+			return
+		}
+
+		// Error if the size of the target is larger than that of the source
 		if src.Info.Size() < info.Size() {
 			p <- Progress{
 				Path:     dst,
@@ -311,9 +345,6 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 		return
 	}
 
-	// TODO: Copy all medadata
-	// TODO: syscall.SetFileTime()
-
 	// Maintain the same modification and access date
 	err = os.Chtimes(tmpDst, src.Info.ModTime().Local(), src.Info.ModTime().Local())
 	if err != nil {
@@ -351,8 +382,27 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 
 // CopyDirSafely ...
 func CopyDirSafely(src string, dst string, nBufferBytes uint, p chan Progress) {
-	src, _ = Abs(src) // TODO: handle error
-	dst, _ = Abs(dst) // TODO: handle error
+	src, err := Abs(src)
+	if err != nil {
+		p <- Progress{
+			Total:    0,
+			Current:  0,
+			Error:    err,
+			TimeLeft: 0,
+		}
+		return
+	}
+
+	dst, err = Abs(dst)
+	if err != nil {
+		p <- Progress{
+			Total:    0,
+			Current:  0,
+			Error:    err,
+			TimeLeft: 0,
+		}
+		return
+	}
 
 	defer close(p)
 	c := make(chan FileResult)
