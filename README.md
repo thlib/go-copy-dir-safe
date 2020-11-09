@@ -15,3 +15,13 @@ To run tests
 ```
 go test ./
 ```
+
+On windows
+
+```
+# build
+go build -o copy.exe main.go
+
+# run
+./copy.exe -src="test/data/source" -dst="test/data/target"
+```
