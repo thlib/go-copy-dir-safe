@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"runtime"
 	"strings"
 	"testing"
@@ -26,15 +27,16 @@ func TestWalkFilesRecursively(t *testing.T) {
 		files = append(files, file.Path)
 	}
 
-	if 4 != len(files) {
-		t.Errorf("Number of files was wrong, want: %v, got: %v", 4, len(files))
-	}
-
 	expected := []string{
 		"/source/file1.txt",
+		"/source/P1010022.JPG",
 		"/source/subfolder/file2.txt",
 		"/source/subfolder/subfolder/file3.txt",
 		"/source/subfolder/subfolder/file4.txt",
+	}
+
+	if len(expected) != len(files) {
+		t.Errorf("Number of files was wrong, want: %v, got: %v", len(expected), len(files))
 	}
 
 	for k, expectedPath := range expected {
@@ -58,7 +60,7 @@ func TestCopyFileSafelyOwerwrite(t *testing.T) {
 		files = append(files, progress.Path)
 	}
 	if len(errors) != 0 {
-		t.Errorf("Wrong number of errors, expecting %v, got %v", 0, len(errors))
+		t.Errorf("Wrong number of errors, expecting %v, got %v: %+v", 0, len(errors), errors)
 	}
 	if len(files) < 1 {
 		t.Errorf("Wrong number of files, expecting at least %v, got %v: %+v", 1, len(files), files)
@@ -77,13 +79,41 @@ func TestCopyFileSafelyNoOwerwrite(t *testing.T) {
 		files = append(files, progress.Path)
 	}
 	if len(errors) != 1 {
-		t.Errorf("Wrong number of errors, expected %v, got %v", 1, len(errors))
+		t.Errorf("Wrong number of errors, expected %v, got %v: %+v", 1, len(errors), errors)
 		return
 	}
 	if len(files) != 1 {
 		t.Errorf("Wrong number of files, expected %v, got %v", 1, len(files))
 		return
 	}
+}
+
+func TestCopyFileSafelyMaintainMetadata(t *testing.T) {
+	var p = make(chan Progress)
+	go CopyFileSafely(FileResult{"test/data/source/P1010022.JPG", nil, nil}, "test/data/target/P1010022.JPG", 1024*1024, p)
+	errors := []error{}
+	files := []string{}
+	for progress := range p {
+		if progress.Error != nil {
+			errors = append(errors, progress.Error)
+		}
+		files = append(files, progress.Path)
+	}
+	if len(errors) != 0 {
+		t.Errorf("Wrong number of errors, expecting %v, got %v: %+v", 0, len(errors), errors)
+	}
+	if len(files) < 1 {
+		t.Errorf("Wrong number of files, expecting at least %v, got %v: %+v", 1, len(files), files)
+	}
+
+	srcInfo, _ := os.Stat("test/data/source/P1010022.JPG")
+	dstInfo, _ := os.Stat("test/data/target/P1010022.JPG")
+
+	if srcInfo.ModTime() != dstInfo.ModTime() {
+		t.Errorf("Wrong modified date, expecting %v, got %v", srcInfo.ModTime(), dstInfo.ModTime())
+	}
+
+	os.Remove("test/data/target/P1010022.JPG")
 }
 
 func MemUsage() uint64 {

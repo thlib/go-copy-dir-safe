@@ -165,7 +165,7 @@ func stats(info os.FileInfo, path string, p chan Progress) os.FileInfo {
 			Path:     path,
 			Total:    0,
 			Current:  0,
-			Error:    fmt.Errorf("Can't open file %v", path),
+			Error:    fmt.Errorf("Can't open file %v: %w", path, err),
 			TimeLeft: 0,
 		}
 	}
@@ -212,15 +212,28 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 	}
 
 	// Error if the size of the target is larger than that of the source
-	if src.Info.Size() < stats(nil, dst, p).Size() {
-		p <- Progress{
-			Path:     dst,
-			Total:    TotalSize,
-			Current:  0,
-			Error:    fmt.Errorf("CopyFileSafely target file \"%v\" is larger", dst),
-			TimeLeft: 0,
+	info, err := os.Stat(dst)
+	if !os.IsNotExist(err) {
+		if err != nil {
+			p <- Progress{
+				Path:     dst,
+				Total:    0,
+				Current:  0,
+				Error:    fmt.Errorf("Can't open file %v: %w", dst, err),
+				TimeLeft: 0,
+			}
+			return
 		}
-		return
+		if src.Info.Size() < info.Size() {
+			p <- Progress{
+				Path:     dst,
+				Total:    TotalSize,
+				Current:  0,
+				Error:    fmt.Errorf("CopyFileSafely target file \"%v\" is larger", dst),
+				TimeLeft: 0,
+			}
+			return
+		}
 	}
 
 	defer source.Close()
@@ -300,6 +313,19 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 
 	// TODO: Copy all medadata
 	// TODO: syscall.SetFileTime()
+
+	// Maintain the same modification and access date
+	err = os.Chtimes(tmpDst, src.Info.ModTime().Local(), src.Info.ModTime().Local())
+	if err != nil {
+		p <- Progress{
+			Path:     dst,
+			Total:    TotalSize,
+			Current:  0,
+			Error:    err,
+			TimeLeft: 0,
+		}
+		return
+	}
 
 	// Rename the temp copied file and finish the process
 	err = os.Rename(tmpDst, dst)
