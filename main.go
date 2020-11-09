@@ -426,19 +426,41 @@ func CopyDirSafely(src string, dst string, nBufferBytes uint, p chan Progress) {
 	}
 }
 
+var srcPtr = flag.String("src", "test/data/source", "Source directory to copy")
+var dstPtr = flag.String("dst", "test/data/target", "Destination directory to copy to")
+
 // ./main -src="C:\Books" -dst="D:\Books"
 func main() {
 
-	src := *flag.String("src", "test/data/source", "Source directory to copy")
-	dst := *flag.String("dst", "test/data/target", "Destination directory to copy to")
+	flag.Parse()
+
+	errFile, err := os.OpenFile("result/error.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		fmt.Printf("Error \"%v\"\n", err)
+		return
+	}
+	defer errFile.Close()
+
+	okFile, err := os.OpenFile("result/ok.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		fmt.Printf("Error \"%v\"\n", err)
+		return
+	}
+	defer okFile.Close()
 
 	p := make(chan Progress)
-	go CopyDirSafely(src, dst, 64*1024*1024, p)
+	go CopyDirSafely(*srcPtr, *dstPtr, 64*1024*1024, p)
 	for progress := range p {
 		if progress.Error != nil {
 			fmt.Printf("Error \"%v\"\n", progress.Error)
+			if _, err = errFile.WriteString(fmt.Sprintf("Error \"%v\"\n", progress.Error)); err != nil {
+				panic(err)
+			}
 		} else {
 			fmt.Printf("%v sec %v\n", progress.Path, progress.TimeLeft)
+			if _, err = okFile.WriteString(fmt.Sprintf("%v sec %v\n", progress.Path, progress.TimeLeft)); err != nil {
+				panic(err)
+			}
 		}
 	}
 }
