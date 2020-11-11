@@ -1,2 +1,4 @@
 github.com/thlib/go-filesys v0.0.0-20201111191415-30d45dc3c258 h1:RY6sk+99B/Ms2M5C+cUu023al9+aEO3EkBTvoAtl3bI=
 github.com/thlib/go-filesys v0.0.0-20201111191415-30d45dc3c258/go.mod h1:iHTDy3F2rhs5ynhL2zRHd4ir5TrzI5UG/bAfwUsT16E=
+github.com/thlib/go-filesys v1.0.0 h1:GRqsuvLXb7zauQ9R8mbNjOpcXc5AT8g2XF3JrwWyCfs=
+github.com/thlib/go-filesys v1.0.0/go.mod h1:iHTDy3F2rhs5ynhL2zRHd4ir5TrzI5UG/bAfwUsT16E=
