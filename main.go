@@ -2,70 +2,15 @@ package main
 
 import (
 	"crypto/md5"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
+
+	filesys "github.com/thlib/go-filesys"
 )
-
-// Abs returns the absolute path of src with forward slashes
-func Abs(src string) (string, error) {
-	path, err := filepath.Abs(src)
-	if err != nil {
-		return "", err
-	}
-	return strings.ReplaceAll(path, "\\", "/"), err
-}
-
-// CreateFile ...
-func CreateFile(dst string) (*os.File, error) {
-	_, err := os.Stat(dst)
-
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(filepath.Dir(dst), 0755)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	return os.Create(dst)
-}
-
-// SplitSlugs ...
-func SplitSlugs(path string) []string {
-	return strings.Split(strings.Trim(strings.ReplaceAll(path, "\\", "/"), "/"), "/")
-}
-
-// JoinPath ...
-func JoinPath(path, add string) string {
-	return strings.Trim(strings.Join([]string{path, add}, "/"), "/")
-}
-
-// CommonSuffix ...
-func CommonSuffix(dst, src string) string {
-	// First we need to find out where exactly these two paths start to differ, so we need to iterate over both paths in reverse
-	dl := len(dst)
-	sl := len(src)
-
-	for i := 0; i < dl; i++ {
-
-		// Outside the range for the source
-		if i >= sl {
-			return dst[dl-i:]
-		}
-
-		// Find the first character that doesn't match
-		if src[sl-i-1] != dst[dl-i-1] {
-			return dst[dl-i:]
-		}
-	}
-	return dst
-}
 
 // FileResult is a data transfer struct for information about a file
 type FileResult struct {
@@ -74,29 +19,14 @@ type FileResult struct {
 	Info  os.FileInfo
 }
 
-// Checksum a file
-func Checksum(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hash := md5.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
 // Checkcopy ...
 func Checkcopy(src, dst string) error {
-	srcCheck, err := Checksum(src)
+	srcCheck, err := filesys.Checksum(src, md5.New())
 	if err != nil {
 		return fmt.Errorf("checkcopy src %v %w", src, err)
 	}
 
-	dstCheck, err := Checksum(dst)
+	dstCheck, err := filesys.Checksum(dst, md5.New())
 	if err != nil {
 		return fmt.Errorf("checkcopy dst %v %w", dst, err)
 	}
@@ -109,7 +39,7 @@ func Checkcopy(src, dst string) error {
 
 // WalkFilesRecursively goes over all files recursively and returns the name into the channel
 func WalkFilesRecursively(root string, c chan FileResult, n int) {
-	root, err := filepath.Abs(root)
+	root, err := filesys.Abs(root)
 	if err != nil {
 		c <- FileResult{
 			Path:  root,
@@ -215,7 +145,7 @@ func stats(info os.FileInfo, path string, p chan Progress) os.FileInfo {
 // CopyFileSafely from source src to destination dst
 // TODO: make this able to copy directories too
 func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progress) {
-	dst, err := Abs(dst)
+	dst, err := filesys.Abs(dst)
 	if err != nil {
 		p <- Progress{
 			Path:     dst,
@@ -307,7 +237,7 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 	tmpDst := fmt.Sprintf("%v.temp", dst)
 
 	// Create the destination file
-	destination, err := CreateFile(tmpDst)
+	destination, err := filesys.CreateFile(tmpDst)
 	if err != nil {
 		p <- Progress{
 			Path:     dst,
@@ -414,7 +344,7 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 
 // CopyDirSafely ...
 func CopyDirSafely(src string, dst string, nBufferBytes uint, p chan Progress) {
-	src, err := Abs(src)
+	src, err := filesys.Abs(src)
 	if err != nil {
 		p <- Progress{
 			Total:    0,
@@ -425,7 +355,7 @@ func CopyDirSafely(src string, dst string, nBufferBytes uint, p chan Progress) {
 		return
 	}
 
-	dst, err = Abs(dst)
+	dst, err = filesys.Abs(dst)
 	if err != nil {
 		p <- Progress{
 			Total:    0,
