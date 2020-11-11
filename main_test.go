@@ -80,25 +80,6 @@ func TestSplitSlugs(t *testing.T) {
 	}
 }
 
-func TestMkdirFrom(t *testing.T) {
-
-	err := MkdirFrom("test/data/source/subfolder/subfolder", "test/data/target/subfolder/subfolder", 0775)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	if !IsFileDateSame("test/data/source/subfolder/subfolder", "test/data/target/subfolder/subfolder") {
-		t.Errorf("subfolder/subfolder date does not match")
-	}
-
-	os.Remove("test/data/target/subfolder/subfolder/file3.txt.temp")
-	os.Remove("test/data/target/subfolder/subfolder/file3.txt")
-	err = os.Remove("test/data/target/subfolder/subfolder")
-	if err != nil {
-		panic(err)
-	}
-}
-
 func TestWalkFilesRecursively(t *testing.T) {
 
 	var files []string
