@@ -22,18 +22,94 @@ func Abs(src string) (string, error) {
 }
 
 // CreateFile ...
-func CreateFile(path string) (*os.File, error) {
-	_, err := os.Stat(path)
+func CreateFile(dst string) (*os.File, error) {
+	_, err := os.Stat(dst)
 
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(filepath.Dir(path), 0755)
+		err = os.MkdirAll(filepath.Dir(dst), 0755)
 	}
 
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return os.Create(path)
+	return os.Create(dst)
+}
+
+// SplitSlugs ...
+func SplitSlugs(path string) []string {
+	return strings.Split(strings.Trim(strings.ReplaceAll(path, "\\", "/"), "/"), "/")
+}
+
+// JoinPath ...
+func JoinPath(path, add string) string {
+	return strings.Trim(strings.Join([]string{path, add}, "/"), "/")
+}
+
+// CommonSuffix ...
+func CommonSuffix(dst, src string) string {
+	// First we need to find out where exactly these two paths start to differ, so we need to iterate over both paths in reverse
+	dl := len(dst)
+	sl := len(src)
+
+	for i := 0; i < dl; i++ {
+
+		// Outside the range for the source
+		if i >= sl {
+			return dst[dl-i:]
+		}
+
+		// Find the first character that doesn't match
+		if src[sl-i-1] != dst[dl-i-1] {
+			return dst[dl-i:]
+		}
+	}
+	return dst
+}
+
+// MkdirFrom ...
+func MkdirFrom(src, dst string, perm os.FileMode) error {
+
+	src, _ = Abs(src)
+	dst, _ = Abs(dst)
+
+	srcSlugs := SplitSlugs(src)
+	dstSlugs := SplitSlugs(dst)
+
+	// path
+	// path/to
+	// path/to/file
+	var srcPath string
+	var dstPath string
+	for k, dstSlug := range dstSlugs {
+
+		// if the target already exists or doesn't then change the date of the target to be the smaller number
+		// First get the date of the source
+
+		srcPath = JoinPath(srcPath, srcSlugs[k])
+		dstPath = JoinPath(dstPath, dstSlug)
+
+		// Get the date of this path
+		srcInfo, _ := os.Stat(srcPath)
+		_, dstErr := os.Stat(dstPath)
+
+		// If the directory doesn't exist, create it and modify it's modified time
+		if os.IsNotExist(dstErr) {
+			err := os.Mkdir(dstPath, perm)
+			if err != nil {
+				return err
+			}
+
+			// Change the modification date to match that of the source
+			// TODO: This is pointless because as soon as we add a file the date changes
+			err = os.Chtimes(dstPath, srcInfo.ModTime(), srcInfo.ModTime())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // FileResult is a data transfer struct for information about a file
@@ -346,7 +422,7 @@ func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progre
 	}
 
 	// Maintain the same modification and access date
-	err = os.Chtimes(tmpDst, src.Info.ModTime().Local(), src.Info.ModTime().Local())
+	err = os.Chtimes(tmpDst, src.Info.ModTime(), src.Info.ModTime())
 	if err != nil {
 		p <- Progress{
 			Path:     dst,
