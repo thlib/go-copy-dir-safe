@@ -213,6 +213,7 @@ func stats(info os.FileInfo, path string, p chan Progress) os.FileInfo {
 }
 
 // CopyFileSafely from source src to destination dst
+// TODO: make this able to copy directories too
 func CopyFileSafely(src FileResult, dst string, nBufferBytes uint, p chan Progress) {
 	dst, err := Abs(dst)
 	if err != nil {

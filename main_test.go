@@ -223,6 +223,10 @@ func TestCopyDirectory(t *testing.T) {
 		}
 	}
 
+	if IsFileDateSame("test/data/source/subfolder", "test/data/target/subfolder") {
+		t.Errorf("test/data/target/subfolder date should not match")
+	}
+
 	if !IsFileDateSame("test/data/source/subfolder/subfolder", "test/data/target/subfolder/subfolder") {
 		t.Errorf("test/data/target/subfolder/subfolder date does not match")
 	}
